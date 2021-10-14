@@ -5,6 +5,7 @@
 #ifndef INNOVATION_PL_DEBUG_H
 #define INNOVATION_PL_DEBUG_H
 
+#include "common.h"
 #include "chunk.h"
 
 namespace debug {

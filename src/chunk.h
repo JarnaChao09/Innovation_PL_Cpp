@@ -5,8 +5,9 @@
 #ifndef INNOVATION_PL_CHUNK_H
 #define INNOVATION_PL_CHUNK_H
 
-#include <vector>
+#include "common.h"
 #include "value.h"
+#include <vector>
 
 namespace language {
     enum OpCode {

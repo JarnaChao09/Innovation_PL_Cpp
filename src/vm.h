@@ -5,6 +5,7 @@
 #ifndef INNOVATION_PL_VM_H
 #define INNOVATION_PL_VM_H
 
+#include "common.h"
 #include "chunk.h"
 
 #define STACK_MAX 256
@@ -12,7 +13,7 @@
 namespace language {
     enum InterpreterResult {
         Ok,
-        CompilerError,
+        CompileError,
         RuntimeError,
     };
 
@@ -32,7 +33,9 @@ namespace language {
             this->stack_top = nullptr;
         }
 
-        InterpreterResult interpret(language::Chunk* chunk);
+//        InterpreterResult interpret(language::Chunk* chunk);
+
+        InterpreterResult interpret(std::string &source);
 
         InterpreterResult run();
 

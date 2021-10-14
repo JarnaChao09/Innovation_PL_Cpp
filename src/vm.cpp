@@ -2,14 +2,19 @@
 // Created by Jaran Chao on 10/12/21.
 //
 
-#include "common.h"
 #include "debug.h"
+#include "compiler.h"
 #include "vm.h"
 
-language::InterpreterResult language::VM::interpret(language::Chunk *_chunk) {
-    this->chunk = _chunk;
-    this->ip = &this->chunk->code[0];
-    return this->run();
+//language::InterpreterResult language::VM::interpret(language::Chunk *_chunk) {
+//    this->chunk = _chunk;
+//    this->ip = &this->chunk->code[0];
+//    return this->run();
+//}
+
+language::InterpreterResult language::VM::interpret(std::string &source) {
+    language::compile(source);
+    return InterpreterResult::Ok;
 }
 
 language::InterpreterResult language::VM::run() {

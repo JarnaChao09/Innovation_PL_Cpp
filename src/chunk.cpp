@@ -2,7 +2,6 @@
 // Created by Jaran Chao on 10/12/21.
 //
 
-#include "common.h"
 #include "chunk.h"
 
 void language::Chunk::write(std::uint8_t byte, int32_t line) {

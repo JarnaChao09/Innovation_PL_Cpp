@@ -6,6 +6,7 @@
 #define INNOVATION_PL_COMMON_H
 
 #include <iostream>
+#include <string>
 
 #define DEBUG_TRACE_EXECUTION
 
