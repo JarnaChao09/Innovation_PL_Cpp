@@ -2,4 +2,5 @@
 1 + 2
 null
 val x = 1
+var y = 2
 "hello"

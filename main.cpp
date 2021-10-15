@@ -32,7 +32,7 @@ void repl(language::VM &vm) {
     for (;;) {
         std::cout << "[> ";
 
-        std::cin >> line;
+        std::getline(std::cin, line);
 
         if (line.empty()) {
             std::cout << "\n";
@@ -44,8 +44,7 @@ void repl(language::VM &vm) {
             break;
         }
 
-        std::cout << line << "\n";
-//        vm.interpret(line.c_str());
+        vm.interpret(line);
     }
 }
 

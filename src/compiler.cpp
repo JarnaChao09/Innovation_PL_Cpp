@@ -13,18 +13,16 @@ void language::compile(std::string &source) {
     for (;;) {
         language::Token token = scanner.scan_token();
         if (token.line != line) {
-            printf("%d ", token.line);
+            printf("%4d ", token.line);
             line = token.line;
         } else {
-            printf("   | ");
+            std::cout << "   | ";
         }
 
-//        printf("%2d '%.*s'\n", token.type, static_cast<int>(token.length), token.start);
+        printf("%2d '%.*s'\n", token.type, static_cast<int>(token.length), token.start);
 
-        std::cout << token.type << '\n' << std::string(token.start) << '\n';
-
-        if (token.type == TokenType::EOF_T) break;
-
-        break;
+        if (token.type == TokenType::EOF_T) {
+            break;
+        }
     }
 }
