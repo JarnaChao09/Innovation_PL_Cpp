@@ -8,7 +8,7 @@
 #include "common.h"
 
 namespace language {
-    enum TokenType {
+    enum class TokenType {
         LeftParen, RightParen,
         LeftBrace, RightBrace,
         LeftBracket, RightBracket,

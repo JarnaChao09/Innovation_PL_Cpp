@@ -12,9 +12,24 @@
 //    return this->run();
 //}
 
-language::InterpreterResult language::VM::interpret(std::string &source) {
-    language::compile(source);
-    return InterpreterResult::Ok;
+//language::InterpreterResult language::VM::interpret(const std::string &source) {
+//    language::compile(source);
+//    return InterpreterResult::Ok;
+//}
+
+language::InterpreterResult language::VM::interpret(const std::string &source) {
+    language::Chunk compiled_chunk{};
+
+    if (!language::compile(this, source, compiled_chunk)) {
+        return language::InterpreterResult::CompileError;
+    }
+
+    this->chunk = &compiled_chunk;
+    this->ip = this->chunk->code.data();
+
+    language::InterpreterResult res = this->run();
+
+    return res;
 }
 
 language::InterpreterResult language::VM::run() {
@@ -40,20 +55,20 @@ language::InterpreterResult language::VM::run() {
             printf("\n");
             debug::disassemble_instruction(this->chunk, (int)(std::size_t)(this->ip - this->chunk->code[0]));
 #endif
-            case language::OpCode::Constant: {
+            case static_cast<std::uint8_t>(language::OpCode::Constant): {
                 language::value_type constant = READ_CONSTANT();
                 this->push(constant);
                 break;
             }
-            case language::OpCode::Negate: {
+            case static_cast<std::uint8_t>(language::OpCode::Negate): {
                 this->push(-this->pop());
                 break;
             }
-            case language::OpCode::Add:      BINARY_OP(+); break;
-            case language::OpCode::Subtract: BINARY_OP(-); break;
-            case language::OpCode::Multiply: BINARY_OP(*); break;
-            case language::OpCode::Divide:   BINARY_OP(/); break;
-            case language::OpCode::Return: {
+            case static_cast<std::uint8_t>(language::OpCode::Add):      BINARY_OP(+); break;
+            case static_cast<std::uint8_t>(language::OpCode::Subtract): BINARY_OP(-); break;
+            case static_cast<std::uint8_t>(language::OpCode::Multiply): BINARY_OP(*); break;
+            case static_cast<std::uint8_t>(language::OpCode::Divide):   BINARY_OP(/); break;
+            case static_cast<std::uint8_t>(language::OpCode::Return): {
                 language::print_value(this->pop());
                 printf("\n");
                 return InterpreterResult::Ok;

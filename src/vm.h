@@ -11,7 +11,7 @@
 #define STACK_MAX 256
 
 namespace language {
-    enum InterpreterResult {
+    enum class InterpreterResult {
         Ok,
         CompileError,
         RuntimeError,
@@ -35,7 +35,7 @@ namespace language {
 
 //        InterpreterResult interpret(language::Chunk* chunk);
 
-        InterpreterResult interpret(std::string &source);
+        InterpreterResult interpret(const std::string &source);
 
         InterpreterResult run();
 

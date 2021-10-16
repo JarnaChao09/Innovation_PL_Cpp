@@ -10,7 +10,7 @@
 #include <vector>
 
 namespace language {
-    enum OpCode {
+    enum class OpCode : std::uint8_t {
         Constant,
         Negate,
         Add,

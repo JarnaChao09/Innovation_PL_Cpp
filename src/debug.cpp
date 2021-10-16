@@ -38,24 +38,24 @@ int debug::disassemble_instruction(language::Chunk *chunk, int offset) {
         printf("%4d ", chunk->lines[offset]);
     }
 
-    uint8_t instruction = chunk->code[offset];
+    auto instruction = static_cast<language::OpCode>(chunk->code[offset]);
     switch (instruction) {
         case language::OpCode::Constant:
-            return constant_instruction("OP_CONSTANT", chunk, offset);
+            return constant_instruction("CONSTANT_OP", chunk, offset);
         case language::OpCode::Negate:
-            return simple_instruction("OP_NEGATE", offset);
+            return simple_instruction("NEGATE_OP", offset);
         case language::OpCode::Add:
-            return simple_instruction("OP_ADD", offset);
+            return simple_instruction("ADD_OP", offset);
         case language::OpCode::Subtract:
-            return simple_instruction("OP_SUBTRACT", offset);
+            return simple_instruction("SUBTRACT_OP", offset);
         case language::OpCode::Multiply:
-            return simple_instruction("OP_MULTIPLY", offset);
+            return simple_instruction("MULTIPLY_OP", offset);
         case language::OpCode::Divide:
-            return simple_instruction("OP_DIVIDE", offset);
+            return simple_instruction("DIVIDE_OP", offset);
         case language::OpCode::Return:
-            return simple_instruction("OP_RETURN", offset);
+            return simple_instruction("RETURN_OP", offset);
         default:
-            printf("Unknown opcode %d\n", instruction);
+            printf("Unknown opcode %hhu\n", instruction);
             return offset + 1;
     }
 }
