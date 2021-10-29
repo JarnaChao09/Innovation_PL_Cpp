@@ -29,8 +29,8 @@ void repl(language::VM &vm) {
 
     std::string line;
 
-    for (;;) {
-        std::cout << "[> ";
+    for (int line_count = 0;;line_count++) {
+        std::cout << "[" << line_count << "]> ";
 
         std::getline(std::cin, line);
 
