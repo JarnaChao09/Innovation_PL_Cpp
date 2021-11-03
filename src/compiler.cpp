@@ -27,9 +27,9 @@
 //    }
 //}
 
-language::Chunk* compiling_chunk;
+language::Chunk *compiling_chunk;
 
-static language::Chunk* current_chunk() {
+static language::Chunk *current_chunk() {
     return compiling_chunk;
 }
 
@@ -94,12 +94,14 @@ void language::Parser::error_at(language::Token &token, const std::string &messa
     this->had_error = true;
 }
 
-bool language::compile(language::VM *vm, const std::string &source, language::Chunk &chunk) {
+bool language::compile(language::VM *vm, const std::string &source, language::Chunk *chunk) {
     auto scanner = language::Scanner(source);
 
-    compiling_chunk = &chunk;
+    compiling_chunk = chunk;
 
     auto parser = language::Parser(scanner);
+
+    return false;
 }
 
 void language::Parser::expression() const {

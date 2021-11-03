@@ -13,7 +13,7 @@
 namespace language {
 //    void compile(const std::string &source);
 
-    bool compile(language::VM *vm, const std::string &source, language::Chunk &chunk);
+    bool compile(language::VM *vm, const std::string &source, language::Chunk *chunk);
 
     struct Parser {
         language::Scanner scanner;

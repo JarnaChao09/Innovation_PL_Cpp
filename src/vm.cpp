@@ -18,13 +18,13 @@
 //}
 
 language::InterpreterResult language::VM::interpret(const std::string &source) {
-    language::Chunk compiled_chunk{};
+    auto *compiled_chunk = new Chunk();
 
     if (!language::compile(this, source, compiled_chunk)) {
         return language::InterpreterResult::CompileError;
     }
 
-    this->chunk = &compiled_chunk;
+    this->chunk = compiled_chunk;
     this->ip = this->chunk->code.data();
 
     language::InterpreterResult res = this->run();
@@ -44,16 +44,16 @@ language::InterpreterResult language::VM::run() {
 
     for (;;) {
         std::uint8_t instruction;
-        switch(instruction = READ_BYTE()) {
+        switch (instruction = READ_BYTE()) {
 #ifdef DEBUG_TRACE_EXECUTION
             printf("          ");
-            for (value_type * slot = this->stack; slot < this->stack_top; slot++) {
+            for (value_type *slot = this->stack; slot < this->stack_top; slot++) {
                 printf("[ ");
                 language::print_value(*slot);
                 printf(" ]");
             }
             printf("\n");
-            debug::disassemble_instruction(this->chunk, (int)(std::size_t)(this->ip - this->chunk->code[0]));
+            debug::disassemble_instruction(this->chunk, (int) (std::size_t) (this->ip - this->chunk->code[0]));
 #endif
             case static_cast<std::uint8_t>(language::OpCode::Constant): {
                 language::value_type constant = READ_CONSTANT();
@@ -64,10 +64,18 @@ language::InterpreterResult language::VM::run() {
                 this->push(-this->pop());
                 break;
             }
-            case static_cast<std::uint8_t>(language::OpCode::Add):      BINARY_OP(+); break;
-            case static_cast<std::uint8_t>(language::OpCode::Subtract): BINARY_OP(-); break;
-            case static_cast<std::uint8_t>(language::OpCode::Multiply): BINARY_OP(*); break;
-            case static_cast<std::uint8_t>(language::OpCode::Divide):   BINARY_OP(/); break;
+            case static_cast<std::uint8_t>(language::OpCode::Add):
+                BINARY_OP(+);
+                break;
+            case static_cast<std::uint8_t>(language::OpCode::Subtract):
+                BINARY_OP(-);
+                break;
+            case static_cast<std::uint8_t>(language::OpCode::Multiply):
+                BINARY_OP(*);
+                break;
+            case static_cast<std::uint8_t>(language::OpCode::Divide):
+                BINARY_OP(/);
+                break;
             case static_cast<std::uint8_t>(language::OpCode::Return): {
                 language::print_value(this->pop());
                 printf("\n");
