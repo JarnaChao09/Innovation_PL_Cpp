@@ -24,7 +24,7 @@ namespace language {
         BitComplement,
         EQ, EqEq,
         Gt, Ge,
-        Le, Lt,
+        Lt, Le,
         BitAnd, And,
         BitOr, Or,
         XOR,
@@ -50,11 +50,15 @@ namespace language {
         EOF_T,
     };
 
+    std::string stringify(TokenType type);
+
     struct Token {
         TokenType type;
         const char *start;
         std::size_t length;
         int line;
+
+        std::string to_string();
     };
 }
 

@@ -2,9 +2,9 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include "src/chunk.h"
-#include "src/debug.h"
 #include "src/vm.h"
+
+#include "src/scanner.h"
 
 void repl(language::VM &vm);
 
@@ -43,6 +43,17 @@ void repl(language::VM &vm) {
             std::cout << "Exiting Repl\n";
             break;
         }
+
+//        std::cout << "[DEBUG REPL]: " << line << "\n";
+//
+//        language::Scanner scanner(line);
+//
+//        auto token = scanner.scan_token();
+//
+//        while(token.type != language::TokenType::EOF_T) {
+//            std::cout << token.to_string() << "\n";
+//            token = scanner.scan_token();
+//        }
 
         vm.interpret(line);
     }

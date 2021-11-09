@@ -15,6 +15,7 @@ static bool is_alpha(char c) {
 }
 
 language::Token language::Scanner::scan_token() {
+//    std::cout << "[DEBUG SCAN TOKEN]: start = '" << *this->start << "' current = '" << *this->current << "'\n";
     this->skip_whitespace();
 
     this->start = this->current;
@@ -84,9 +85,9 @@ language::Token language::Scanner::scan_token() {
             return this->make_token(TokenType::XOR);
         case '"':
             return this->string_literal();
+        default:
+            return this->error_token("Unexpected Character.");
     }
-
-    return this->error_token("Unexpected Character.");
 }
 
 char language::Scanner::advance() {
@@ -115,7 +116,7 @@ void language::Scanner::skip_whitespace() {
                 this->advance();
                 break;
             case '/':
-                if (this->peek_next()) {
+                if (this->peek_next() == '/') {
                     while (this->peek() != '\n' && !this->is_at_end()) {
                         this->advance();
                     }

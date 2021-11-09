@@ -18,18 +18,29 @@
 //}
 
 language::InterpreterResult language::VM::interpret(const std::string &source) {
-    auto *compiled_chunk = new Chunk();
+    auto compiler = new language::Compiler(source);
 
-    if (!language::compile(this, source, compiled_chunk)) {
+    bool error = false;
+
+    language::Expr *current_expr = compiler->compile(this, source, error);
+
+    if (error) {
         return language::InterpreterResult::CompileError;
     }
 
-    this->chunk = compiled_chunk;
-    this->ip = this->chunk->code.data();
+    if (current_expr) {
+        std::cout << current_expr->to_string() << "\n";
+    } else {
+        std::cout << "null\n";
+    }
 
-    language::InterpreterResult res = this->run();
-
-    return res;
+//    this->chunk = compiled_chunk;
+//    this->ip = this->chunk->code.data();
+//
+//    language::InterpreterResult res = this->run();
+//
+//    return res;
+    return language::InterpreterResult::Ok;
 }
 
 language::InterpreterResult language::VM::run() {

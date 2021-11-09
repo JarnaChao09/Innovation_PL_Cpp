@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <sstream>
 
 #define DEBUG_TRACE_EXECUTION
 

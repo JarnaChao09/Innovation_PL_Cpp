@@ -5,27 +5,53 @@
 #ifndef INNOVATION_PL_COMPILER_H
 #define INNOVATION_PL_COMPILER_H
 
+#include <functional>
+
 #include "common.h"
 #include "chunk.h"
 #include "vm.h"
 #include "scanner.h"
+#include "ast/ast.h"
 
 namespace language {
 //    void compile(const std::string &source);
 
-    bool compile(language::VM *vm, const std::string &source, language::Chunk *chunk);
+    struct Compiler {
+        const std::string &current_source;
+        std::vector<language::Statement *> statements;
+
+        explicit Compiler(const std::string &current_source) : current_source(current_source), statements() {}
+
+        language::Expr *compile(language::VM *vm, const std::string &source, bool &flag);
+    };
+
+//    bool compile(language::VM *vm, const std::string &source, language::Chunk *chunk);
+
+    enum class ParserPrecedence {
+        None,
+        Assignment,  // =
+        Or,          // ||
+        And,         // &&
+        Equality,    // == !=
+        Comparison,  // < > <= >=
+        Term,        // + -
+        Factor,      // * /
+        Unary,       // ! -
+        Call,        // . ()
+        Primary,
+    };
 
     struct Parser {
-        language::Scanner scanner;
+        language::Scanner *scanner;
+        language::Compiler *compiler;
         language::Token current;
         language::Token previous;
 
         bool had_error;
         bool panic_mode;
 
-        explicit Parser(language::Scanner &scanner1)
-                : scanner(scanner1),
-                  current(), previous(), had_error(false), panic_mode(false) {}
+        explicit Parser(language::Scanner *scanner, language::Compiler *compiler)
+                : scanner(scanner), compiler(compiler), current(), previous(), had_error(false), panic_mode(false) {}
 
         void error_at_current(const std::string &message);
 
@@ -43,7 +69,26 @@ namespace language {
 
         void emit_return() const;
 
-        void expression() const;
+        [[nodiscard]] Expr *parse_precedence(ParserPrecedence precedence);
+
+        [[nodiscard]] Expr *expression();
+
+        [[nodiscard]] Expr *number();
+
+        [[nodiscard]] Expr *grouping();
+
+        [[nodiscard]] Expr *unary();
+
+        [[nodiscard]] Expr *binary(Expr *left);
+    };
+
+    using ParseFn = const std::function<Expr *(Parser *)>;
+    using ParseInfixFn = const std::function<Expr *(Parser *, Expr *)>;
+
+    struct ParseRule {
+        ParseFn prefix;
+        ParseInfixFn infix;
+        ParserPrecedence precedence;
     };
 }
 
