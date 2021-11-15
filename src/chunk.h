@@ -12,6 +12,7 @@
 namespace language {
     enum class OpCode : std::uint8_t {
         Constant,
+        Identity,
         Negate,
         Add,
         Subtract,

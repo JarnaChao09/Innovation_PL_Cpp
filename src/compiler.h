@@ -25,6 +25,38 @@ namespace language {
         language::Expr *compile(language::VM *vm, const std::string &source, bool &flag);
     };
 
+    struct CodeGenerator : virtual Expr::Visitor, virtual Statement::Visitor {
+        Chunk *current_chunk;
+        Expr *current_expr_tree;
+        int line;
+
+        CodeGenerator(): current_chunk(nullptr), current_expr_tree(nullptr), line(0) {};
+
+        explicit CodeGenerator(Chunk *chunk): current_chunk(chunk), current_expr_tree(nullptr), line(0) {};
+
+        CodeGenerator(Chunk *current_chunk, Expr *tree): current_chunk(current_chunk), current_expr_tree(tree), line(0) {};
+
+        CodeGenerator(Chunk *current_chunk, Expr *tree, int line): current_chunk(current_chunk), current_expr_tree(tree), line(line) {};
+
+        Chunk *generate();
+
+        Chunk *generate_with(Expr *tree);
+
+        Chunk *generate_into(Chunk *chunk);
+
+        Chunk *generate_into_with(Chunk *chunk, Expr *tree);
+
+        void evaluate(Expr *expr);
+
+        void visit_unary_expr(Expr::Unary *expr) override;
+
+        void visit_binary_expr(Expr::Binary *expr) override;
+
+        void visit_literal_expr(Expr::Literal *expr) override;
+
+        void visit_grouping_expr(Expr::Grouping *expr) override;
+    };
+
 //    bool compile(language::VM *vm, const std::string &source, language::Chunk *chunk);
 
     enum class ParserPrecedence {

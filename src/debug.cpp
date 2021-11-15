@@ -42,6 +42,8 @@ int debug::disassemble_instruction(language::Chunk *chunk, int offset) {
     switch (instruction) {
         case language::OpCode::Constant:
             return constant_instruction("CONSTANT_OP", chunk, offset);
+        case language::OpCode::Identity:
+            return simple_instruction("IDENTITY_OP", offset);
         case language::OpCode::Negate:
             return simple_instruction("NEGATE_OP", offset);
         case language::OpCode::Add:

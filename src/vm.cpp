@@ -34,13 +34,25 @@ language::InterpreterResult language::VM::interpret(const std::string &source) {
         std::cout << "null\n";
     }
 
-//    this->chunk = compiled_chunk;
-//    this->ip = this->chunk->code.data();
-//
-//    language::InterpreterResult res = this->run();
-//
-//    return res;
-    return language::InterpreterResult::Ok;
+    auto *compiled_chunk = new Chunk();
+
+    language::CodeGenerator code_generator(compiled_chunk, current_expr);
+
+    code_generator.generate();
+
+    std::cout << "\n";
+
+    debug::disassemble_chunk(compiled_chunk, "REPL");
+
+    std::cout << "\n";
+
+    this->chunk = compiled_chunk;
+    this->ip = this->chunk->code.data();
+
+    language::InterpreterResult res = this->run();
+
+    return res;
+//    return language::InterpreterResult::Ok;
 }
 
 language::InterpreterResult language::VM::run() {
@@ -69,6 +81,10 @@ language::InterpreterResult language::VM::run() {
             case static_cast<std::uint8_t>(language::OpCode::Constant): {
                 language::value_type constant = READ_CONSTANT();
                 this->push(constant);
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Identity): {
+                this->push(+this->pop());
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Negate): {

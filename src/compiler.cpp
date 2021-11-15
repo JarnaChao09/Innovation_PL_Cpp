@@ -205,7 +205,7 @@ language::Expr *language::Parser::expression() {
 language::Expr *language::Parser::number() {
 //    std::cout << "[DEBUG NUMBER]: previous = '" << std::string(this->previous.start, this->previous.length) << "', current = '" << std::string(this->current.start, this->current.length) << "'\n";
     double value = std::strtod(this->previous.start, nullptr);
-    language::Expr *literal = new language::Expr::Literal(value, Expr::Literal::Type::Double);
+    language::Expr *literal = new language::Expr::Literal(value, Expr::Literal::Type::Double, this->previous.line);
 //    language::Statement *statement = new language::Statement::Expression(literal);
     return literal;
 }
@@ -251,4 +251,88 @@ language::Expr *language::Parser::binary(language::Expr* left) {
         default:
             return nullptr; // unreachable
     }
+}
+
+language::Chunk *language::CodeGenerator::generate() {
+    this->evaluate(this->current_expr_tree);
+    this->current_chunk->write(static_cast<std::uint8_t>(language::OpCode::Return), this->line);
+    return this->current_chunk;
+}
+
+language::Chunk *language::CodeGenerator::generate_with(Expr *tree) {
+    this->current_expr_tree = tree;
+    return this->generate();
+}
+
+language::Chunk *language::CodeGenerator::generate_into(language::Chunk *chunk) {
+    this->current_chunk = chunk;
+    return this->generate();
+}
+
+language::Chunk *language::CodeGenerator::generate_into_with(Chunk *chunk, Expr *tree) {
+    this->current_chunk = chunk;
+    this->current_expr_tree = tree;
+    return this->generate();
+}
+
+void language::CodeGenerator::evaluate(Expr *expr) {
+    expr->accept(this);
+}
+
+void language::CodeGenerator::visit_unary_expr(Expr::Unary *expr) {
+    this->evaluate(expr->right);
+
+    language::OpCode opcode;
+
+    switch (expr->op.type) {
+        case TokenType::Plus:
+            opcode = language::OpCode::Identity;
+            break;
+        case TokenType::Minus:
+            opcode = language::OpCode::Negate;
+            break;
+        case TokenType::Bang:
+            return; // not implemented
+        case TokenType::BitComplement:
+            return; // not implemented
+        default:
+            return; // unreachable
+    }
+
+    this->current_chunk->write(static_cast<std::uint8_t>(opcode), this->line = expr->op.line);
+}
+
+void language::CodeGenerator::visit_binary_expr(Expr::Binary *expr) {
+    this->evaluate(expr->left);
+    this->evaluate(expr->right);
+
+    language::OpCode opcode;
+
+    switch (expr->op.type) {
+        case language::TokenType::Plus:
+            opcode = language::OpCode::Add;
+            break;
+        case language::TokenType::Minus:
+            opcode = language::OpCode::Subtract;
+            break;
+        case language::TokenType::Star:
+            opcode = language::OpCode::Multiply;
+            break;
+        case language::TokenType::Slash:
+            opcode = language::OpCode::Divide;
+            break;
+        default:
+            return; // unreachable
+    }
+
+    this->current_chunk->write(static_cast<std::uint8_t>(opcode), this->line = expr->op.line);
+}
+
+void language::CodeGenerator::visit_literal_expr(Expr::Literal *expr) {
+    this->current_chunk->write(static_cast<std::uint8_t>(language::OpCode::Constant), this->line = expr->line);
+    this->current_chunk->write(this->current_chunk->add_constant(expr->value), this->line = expr->line);
+}
+
+void language::CodeGenerator::visit_grouping_expr(Expr::Grouping *expr) {
+    this->evaluate(expr->expression);
 }
