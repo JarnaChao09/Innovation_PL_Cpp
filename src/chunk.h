@@ -14,6 +14,16 @@ namespace language {
         Constant,
         Identity,
         Negate,
+        Not,
+        Null,
+        True,
+        False,
+        Ne,
+        Eq,
+        Gt,
+        Ge,
+        Lt,
+        Le,
         Add,
         Subtract,
         Multiply,
@@ -39,7 +49,7 @@ namespace language {
 
         void write(std::uint8_t byte, int32_t line);
 
-        int add_constant(language::value_type value);
+        int add_constant(language::value_t value);
 
         [[nodiscard]] std::size_t count() const;
 

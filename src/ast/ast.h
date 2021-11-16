@@ -14,6 +14,19 @@
 namespace language {
     class Expr {
     public:
+        enum class Type {
+            Byte,
+            Short,
+            Int,
+            Long,
+            Float,
+            Double,
+            Char,
+            String,
+            Boolean,
+            Null,
+        };
+
         class Assign;
 
         class Binary;
@@ -70,6 +83,8 @@ namespace language {
         virtual void accept(Visitor *visitor) {};
 
         virtual std::string to_string() { return ""; };
+
+        virtual Type type() = 0;
     };
 
     class Expr::Assign : public virtual Expr {
@@ -78,6 +93,10 @@ namespace language {
 
         void accept(Visitor *visitor) override {
             visitor->visit_assign_expr(this);
+        }
+
+        Type type() override {
+            return value->type();
         }
 
         std::string to_string() override {
@@ -98,6 +117,10 @@ namespace language {
             visitor->visit_binary_expr(this);
         }
 
+        Type type() override {
+            return left->type();
+        }
+
         std::string to_string() override {
             std::stringstream out{};
             out << "Binary(" << this->left->to_string() << ", " << std::string(this->op.start, this->op.length) << ", " << this->right->to_string() << ")";
@@ -110,12 +133,17 @@ namespace language {
 
     class Expr::Call : public virtual Expr {
     public:
-        Call(Expr *callee, Token paren, std::vector<Expr *> arguments) : callee(callee),
+        Call(Expr *callee, Token paren, std::vector<Expr *> arguments, Type return_type) : callee(callee),
                                                                          arguments(std::move(arguments)),
-                                                                         paren(paren) {};
+                                                                         paren(paren),
+                                                                         return_type(return_type) {};
 
         void accept(Visitor *visitor) override {
             visitor->visit_call_expr(this);
+        }
+
+        Type type() override {
+            return return_type;
         }
 
         std::string to_string() override {
@@ -130,14 +158,19 @@ namespace language {
         Expr *callee;
         Token paren;
         std::vector<Expr *> arguments;
+        Type return_type;
     };
 
     class Expr::Get : public virtual Expr {
     public:
-        Get(Expr *object, Token name) : object(object), name(name) {};
+        Get(Expr *object, Token name, Type get_type) : object(object), name(name), get_type(get_type) {};
 
         void accept(Visitor *visitor) override {
             visitor->visit_get_expr(this);
+        }
+
+        Type type() override {
+            return get_type;
         }
 
         std::string to_string() override {
@@ -148,6 +181,7 @@ namespace language {
 
         Expr *object;
         Token name;
+        Type get_type;
     };
 
     class Expr::Grouping : public virtual Expr {
@@ -156,6 +190,10 @@ namespace language {
 
         void accept(Visitor *visitor) override {
             visitor->visit_grouping_expr(this);
+        }
+
+        Type type() override {
+            return expression->type();
         }
 
         std::string to_string() override {
@@ -169,67 +207,67 @@ namespace language {
 
     class Expr::Literal : public virtual Expr {
     public:
-        enum class Type {
-            Byte,
-            Short,
-            Int,
-            Long,
-            Float,
-            Double,
-            Char,
-            String,
-        };
-
-        Literal(language::value_type value, Type type, int line) : value(value), type(type), line(line) {};
+        Literal(language::value_t value, Type literal_type, int line) : value(value), literal_type(literal_type), line(line) {};
 
         void accept(Visitor *visitor) override {
             visitor->visit_literal_expr(this);
         }
 
+        Type type() override {
+            return literal_type;
+        }
+
         std::string to_string() override {
             std::stringstream out{};
             out << "Literal(";
-            language::Expr::Literal::Type _type = this->type;
+            language::Expr::Literal::Type _type = this->type();
             switch (_type) {
                 case Expr::Literal::Type::Byte:
-                    out << std::any_cast<unsigned char>(this->value);
+//                    out << std::any_cast<unsigned char>(this->value);
                     out << ", Byte";
                     break;
                 case Expr::Literal::Type::Short:
-                    out << std::any_cast<short>(this->value);
+//                    out << std::any_cast<short>(this->value);
                     out << ", Short";
                     break;
                 case Expr::Literal::Type::Int:
-                    out << std::any_cast<int>(this->value);
+//                    out << std::any_cast<int>(this->value);
                     out << ", Int";
                     break;
                 case Expr::Literal::Type::Long:
-                    out << std::any_cast<long>(this->value);
+//                    out << std::any_cast<long>(this->value);
                     out << ", Long";
                     break;
                 case Expr::Literal::Type::Float:
-                    out << std::any_cast<float>(this->value);
+//                    out << std::any_cast<float>(this->value);
                     out << ", Float";
                     break;
                 case Expr::Literal::Type::Double:
-                    out << std::any_cast<double>(this->value);
+                    out << this->value.as.double_value;
                     out << ", Double";
                     break;
                 case Expr::Literal::Type::Char:
-                    out << std::any_cast<char>(this->value);
+//                    out << std::any_cast<char>(this->value);
                     out << ", Char";
                     break;
                 case Expr::Literal::Type::String:
-                    out << std::any_cast<std::string>(this->value);
+//                    out << std::any_cast<std::string>(this->value);
                     out << ", String";
+                    break;
+                case Expr::Literal::Type::Boolean:
+                    out << std::boolalpha << this->value.as.boolean_value;
+                    out << ", Boolean";
+                    break;
+                case Expr::Literal::Type::Null:
+                    out << "Null";
                     break;
             }
             out << ")";
             return out.str();
         }
 
-        language::value_type value;
-        Type type;
+        language::value_t value;
+        Type literal_type;
         int line;
     };
 
@@ -239,6 +277,10 @@ namespace language {
 
         void accept(Visitor *visitor) override {
             visitor->visit_logical_expr(this);
+        }
+
+        Type type() override {
+            return Type::Boolean;
         }
 
         std::string to_string() override {
@@ -257,6 +299,10 @@ namespace language {
 
         void accept(Visitor *visitor) override {
             visitor->visit_set_expr(this);
+        }
+
+        Type type() override {
+            return value->type();
         }
 
         std::string to_string() override {
@@ -311,6 +357,10 @@ namespace language {
             visitor->visit_unary_expr(this);
         }
 
+        Type type() override {
+            return right->type();
+        }
+
         std::string to_string() override {
             std::stringstream out{};
             out << "Unary(" << std::string(this->op.start, this->op.length) << ", " << this->right->to_string() << ")";
@@ -323,10 +373,14 @@ namespace language {
 
     class Expr::Variable : public virtual Expr {
     public:
-        explicit Variable(Token name) : name(name) {};
+        Variable(Token name, Type variable_type) : name(name), variable_type(variable_type) {};
 
         void accept(Visitor *visitor) override {
             visitor->visit_variable_expr(this);
+        }
+
+        Type type() override {
+            return variable_type;
         }
 
         std::string to_string() override {
@@ -336,6 +390,7 @@ namespace language {
         }
 
         Token name;
+        Type variable_type;
     };
 
     class Statement {

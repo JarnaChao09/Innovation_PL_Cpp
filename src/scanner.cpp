@@ -183,9 +183,9 @@ language::TokenType language::Scanner::identifier_type() const {
             if (this->current - this->start > 1) {
                 switch(this->start[1]) {
                     case 'h':
-                        return this->check_keyword(1,"is", TokenType::This);
+                        return this->check_keyword(2,"is", TokenType::This);
                     case 'r':
-                        return this->check_keyword(1, "ue", TokenType::True);
+                        return this->check_keyword(2, "ue", TokenType::True);
                 }
             }
             break;

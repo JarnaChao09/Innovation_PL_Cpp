@@ -9,7 +9,7 @@ void language::Chunk::write(std::uint8_t byte, int32_t line) {
     this->lines.push_back(line);
 }
 
-int language::Chunk::add_constant(language::value_type value) {
+int language::Chunk::add_constant(language::value_t value) {
     this->constants.write(value);
     return static_cast<int>(this->constants.get_count() - 1);
 }

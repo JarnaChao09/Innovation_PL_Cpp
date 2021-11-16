@@ -29,14 +29,15 @@ namespace language {
         Chunk *current_chunk;
         Expr *current_expr_tree;
         int line;
+        bool had_error;
 
-        CodeGenerator(): current_chunk(nullptr), current_expr_tree(nullptr), line(0) {};
+        CodeGenerator(): current_chunk(nullptr), current_expr_tree(nullptr), line(0), had_error(false) {};
 
-        explicit CodeGenerator(Chunk *chunk): current_chunk(chunk), current_expr_tree(nullptr), line(0) {};
+        explicit CodeGenerator(Chunk *chunk): current_chunk(chunk), current_expr_tree(nullptr), line(0), had_error(false) {};
 
-        CodeGenerator(Chunk *current_chunk, Expr *tree): current_chunk(current_chunk), current_expr_tree(tree), line(0) {};
+        CodeGenerator(Chunk *current_chunk, Expr *tree): current_chunk(current_chunk), current_expr_tree(tree), line(0), had_error(false) {};
 
-        CodeGenerator(Chunk *current_chunk, Expr *tree, int line): current_chunk(current_chunk), current_expr_tree(tree), line(line) {};
+        CodeGenerator(Chunk *current_chunk, Expr *tree, int line): current_chunk(current_chunk), current_expr_tree(tree), line(line), had_error(false) {};
 
         Chunk *generate();
 
@@ -45,6 +46,8 @@ namespace language {
         Chunk *generate_into(Chunk *chunk);
 
         Chunk *generate_into_with(Chunk *chunk, Expr *tree);
+
+        void error(const std::string &message);
 
         void evaluate(Expr *expr);
 
@@ -101,7 +104,7 @@ namespace language {
 
         void emit_return() const;
 
-        [[nodiscard]] Expr *parse_precedence(ParserPrecedence precedence);
+        [[nodiscard]] Expr *parse_precedence(ParserPrecedence precedence, const std::string &message);
 
         [[nodiscard]] Expr *expression();
 
@@ -112,6 +115,8 @@ namespace language {
         [[nodiscard]] Expr *unary();
 
         [[nodiscard]] Expr *binary(Expr *left);
+
+        [[nodiscard]] Expr *literal();
     };
 
     using ParseFn = const std::function<Expr *(Parser *)>;

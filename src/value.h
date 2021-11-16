@@ -9,14 +9,47 @@
 #include <vector>
 
 namespace language {
-    using value_type = double;
+    enum class ValueType {
+//        Byte,
+//        Short,
+//        Int,
+//        Long,
+//        Float,
+        Double,
+//        Char,
+//        String,
+        Boolean,
+        Null,
+    };
+    struct value_t {
+        ValueType type;
+        union {
+            bool boolean_value;
+            double double_value;
+        } as;
 
-    void print_value(value_type value);
+        value_t(ValueType type, bool value): type(type), as() {
+            this->as.boolean_value = value;
+        }
+
+        value_t(ValueType type, double value): type(type), as() {
+            this->as.double_value = value;
+        }
+
+        explicit value_t(ValueType type): type(type), as() {
+            this->as.double_value = 0.0;
+        }
+
+        value_t(): type(), as() {}
+    };
+
+
+    void print_value(value_t value);
 
     struct ValueArray {
-        using value_buffer = std::vector<value_type>;
+        using value_buffer = std::vector<value_t>;
         using size_type = typename value_buffer::size_type;
-        std::vector<value_type> values;
+        std::vector<value_t> values;
 
         ValueArray() : values() {}
 
@@ -28,7 +61,7 @@ namespace language {
 
         [[nodiscard]] size_type get_capacity() const;
 
-        void write(value_type value);
+        void write(value_t value);
     };
 }
 

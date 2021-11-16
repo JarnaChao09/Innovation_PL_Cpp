@@ -20,8 +20,8 @@ namespace language {
     struct VM {
         language::Chunk* chunk;
         std::uint8_t* ip;
-        value_type stack[STACK_MAX];
-        value_type* stack_top;
+        value_t stack[STACK_MAX];
+        value_t* stack_top;
 
         VM(): chunk(), ip(), stack(), stack_top() {
             this->reset_stack();
@@ -41,9 +41,9 @@ namespace language {
 
         void reset_stack();
 
-        void push(value_type value);
+        void push(value_t value);
 
-        value_type pop();
+        value_t pop();
     };
 }
 #endif //INNOVATION_PL_VM_H

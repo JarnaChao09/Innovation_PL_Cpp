@@ -17,6 +17,24 @@
 //    return InterpreterResult::Ok;
 //}
 
+bool is_falsey(language::value_t value) {
+    return value.type == language::ValueType::Null ||
+           (value.type == language::ValueType::Boolean && !value.as.boolean_value);
+}
+
+bool values_equal(language::value_t lhs, language::value_t rhs) {
+    if (lhs.type != rhs.type) return false;
+
+    switch (lhs.type) {
+        case language::ValueType::Double:
+            return lhs.as.double_value == rhs.as.double_value;
+        case language::ValueType::Boolean:
+            return lhs.as.boolean_value == rhs.as.boolean_value;
+        case language::ValueType::Null:
+            return true;
+    }
+}
+
 language::InterpreterResult language::VM::interpret(const std::string &source) {
     auto compiler = new language::Compiler(source);
 
@@ -40,6 +58,10 @@ language::InterpreterResult language::VM::interpret(const std::string &source) {
 
     code_generator.generate();
 
+    if (code_generator.had_error) {
+        return language::InterpreterResult::CompileError;
+    }
+
     std::cout << "\n";
 
     debug::disassemble_chunk(compiled_chunk, "REPL");
@@ -52,17 +74,16 @@ language::InterpreterResult language::VM::interpret(const std::string &source) {
     language::InterpreterResult res = this->run();
 
     return res;
-//    return language::InterpreterResult::Ok;
 }
 
 language::InterpreterResult language::VM::run() {
 #define READ_BYTE() (*this->ip++)
 #define READ_CONSTANT() (this->chunk->constants.values[READ_BYTE()])
-#define BINARY_OP(op) \
+#define BINARY_OP(value_type, op) \
     do { \
-      double b = this->pop(); \
-      double a = this->pop(); \
-      this->push(a op b); \
+      double b = this->pop().as.double_value; \
+      double a = this->pop().as.double_value; \
+      this->push(language::value_t(value_type, a op b)); \
     } while (false)
 
     for (;;) {
@@ -70,7 +91,7 @@ language::InterpreterResult language::VM::run() {
         switch (instruction = READ_BYTE()) {
 #ifdef DEBUG_TRACE_EXECUTION
             printf("          ");
-            for (value_type *slot = this->stack; slot < this->stack_top; slot++) {
+            for (value_t *slot = this->stack; slot < this->stack_top; slot++) {
                 printf("[ ");
                 language::print_value(*slot);
                 printf(" ]");
@@ -79,29 +100,73 @@ language::InterpreterResult language::VM::run() {
             debug::disassemble_instruction(this->chunk, (int) (std::size_t) (this->ip - this->chunk->code[0]));
 #endif
             case static_cast<std::uint8_t>(language::OpCode::Constant): {
-                language::value_type constant = READ_CONSTANT();
+                language::value_t constant = READ_CONSTANT();
                 this->push(constant);
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Identity): {
-                this->push(+this->pop());
+                this->push(language::value_t(ValueType::Double, +this->pop().as.double_value));
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Negate): {
-                this->push(-this->pop());
+                this->push(language::value_t(ValueType::Double, -this->pop().as.double_value));
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Not): {
+                this->push(language::value_t(ValueType::Boolean, is_falsey(this->pop())));
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::True): {
+                this->push(language::value_t(ValueType::Boolean, true));
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::False): {
+                this->push(language::value_t(ValueType::Boolean, false));
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Ne): {
+                language::value_t b = this->pop();
+                language::value_t a = this->pop();
+                this->push(language::value_t(ValueType::Boolean, !values_equal(a, b)));
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Eq): {
+                language::value_t b = this->pop();
+                language::value_t a = this->pop();
+                this->push(language::value_t(ValueType::Boolean, values_equal(a, b)));
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Gt): {
+                BINARY_OP(language::ValueType::Boolean, >);
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Ge): {
+                BINARY_OP(language::ValueType::Boolean, >=);
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Lt): {
+                BINARY_OP(language::ValueType::Boolean, <);
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Le): {
+                BINARY_OP(language::ValueType::Boolean, <=);
+                break;
+            }
+            case static_cast<std::uint8_t>(language::OpCode::Null): {
+                this->push(language::value_t(ValueType::Null));
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Add):
-                BINARY_OP(+);
+                BINARY_OP(language::ValueType::Double, +);
                 break;
             case static_cast<std::uint8_t>(language::OpCode::Subtract):
-                BINARY_OP(-);
+                BINARY_OP(language::ValueType::Double, -);
                 break;
             case static_cast<std::uint8_t>(language::OpCode::Multiply):
-                BINARY_OP(*);
+                BINARY_OP(language::ValueType::Double, *);
                 break;
             case static_cast<std::uint8_t>(language::OpCode::Divide):
-                BINARY_OP(/);
+                BINARY_OP(language::ValueType::Double, /);
                 break;
             case static_cast<std::uint8_t>(language::OpCode::Return): {
                 language::print_value(this->pop());
@@ -120,10 +185,10 @@ void language::VM::reset_stack() {
     this->stack_top = this->stack;
 }
 
-void language::VM::push(value_type value) {
+void language::VM::push(value_t value) {
     *this->stack_top++ = value;
 }
 
-language::value_type language::VM::pop() {
+language::value_t language::VM::pop() {
     return *--this->stack_top;
 }

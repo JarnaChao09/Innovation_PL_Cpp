@@ -4,7 +4,7 @@
 
 ### C++ ###
 # Prerequisites
-*.d
+*.double_value
 
 # Compiled Object files
 *.slo
