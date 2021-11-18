@@ -6,6 +6,7 @@
 #define INNOVATION_PL_AST_H
 
 #include "../token.h"
+#include "../object.h"
 #include <any>
 #include <utility>
 #include <vector>
@@ -25,6 +26,7 @@ namespace language {
             String,
             Boolean,
             Null,
+            Object,
         };
 
         class Assign;
@@ -251,7 +253,7 @@ namespace language {
                     out << ", Char";
                     break;
                 case Expr::Literal::Type::String:
-//                    out << std::any_cast<std::string>(this->value);
+                    out << reinterpret_cast<ObjString*>(value.as.obj)->chars;
                     out << ", String";
                     break;
                 case Expr::Literal::Type::Boolean:
@@ -261,6 +263,9 @@ namespace language {
                 case Expr::Literal::Type::Null:
                     out << "Null";
                     break;
+                case Expr::Literal::Type::Object:
+                    out << this->value.as.obj;
+                    out << ", Object";
             }
             out << ")";
             return out.str();
@@ -451,6 +456,10 @@ namespace language {
     class Statement::Expression : public virtual Statement {
     public:
         explicit Expression(Expr *expression) : expression(expression) {};
+
+        void accept(Visitor *visitor) override {
+            visitor->visit_expression_stmt(this);
+        }
 
         language::Expr *expression;
     };

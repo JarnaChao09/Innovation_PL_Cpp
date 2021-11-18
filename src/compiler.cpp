@@ -34,22 +34,9 @@ static language::Chunk *current_chunk() {
     return compiling_chunk;
 }
 
-static void end_compiler(language::Parser &parser) {
-    parser.emit_return();
-}
-
-void language::Parser::emit_byte(std::uint8_t byte) const {
-    current_chunk()->write(byte, this->previous.line);
-}
-
-void language::Parser::emit_bytes(std::uint8_t byte1, std::uint8_t byte2) const {
-    this->emit_byte(byte1);
-    this->emit_byte(byte2);
-}
-
-void language::Parser::emit_return() const {
-    this->emit_byte(static_cast<uint8_t>(language::OpCode::Return));
-}
+//static void end_compiler(language::Parser &parser) {
+//    parser.emit_return();
+//}
 
 void language::Parser::advance() {
     this->previous = this->current;
@@ -149,7 +136,7 @@ static std::unordered_map<language::TokenType, language::ParseRule> &get_rules()
             {language::TokenType::Or           , language::ParseRule{nullptr, nullptr, language::ParserPrecedence::None}},
             {language::TokenType::XOR          , language::ParseRule{nullptr, nullptr, language::ParserPrecedence::None}},
             {language::TokenType::Identifier   , language::ParseRule{nullptr, nullptr, language::ParserPrecedence::None}},
-            {language::TokenType::String       , language::ParseRule{nullptr, nullptr, language::ParserPrecedence::None}},
+            {language::TokenType::String       , language::ParseRule{[](language::Parser *parser) { return parser->string(); }, nullptr, language::ParserPrecedence::None}},
             {language::TokenType::Number       , language::ParseRule{[](language::Parser *parser) { return parser->number(); }, nullptr, language::ParserPrecedence::None}},
             {language::TokenType::True         , language::ParseRule{literal, nullptr, language::ParserPrecedence::None}},
             {language::TokenType::False        , language::ParseRule{literal, nullptr, language::ParserPrecedence::None}},
@@ -209,6 +196,10 @@ language::Expr *language::Parser::number() {
     language::Expr *literal = new language::Expr::Literal(language::value_t(ValueType::Double, value), Expr::Literal::Type::Double, this->previous.line);
 //    language::Statement *statement = new language::Statement::Expression(literal);
     return literal;
+}
+
+language::Expr *language::Parser::string() {
+    return new language::Expr::Literal(language::value_t(ValueType::Object, language::copy_string(this->previous.start + 1, this->previous.length - 2)), Expr::Type::String, this->previous.line);
 }
 
 language::Expr *language::Parser::grouping() {
@@ -275,7 +266,7 @@ language::Expr *language::Parser::literal() {
 
 language::Chunk *language::CodeGenerator::generate() {
     this->evaluate(this->current_expr_tree);
-    this->current_chunk->write(static_cast<std::uint8_t>(language::OpCode::Return), this->line);
+    this->emit_return();
     return this->current_chunk;
 }
 
@@ -293,6 +284,33 @@ language::Chunk *language::CodeGenerator::generate_into_with(Chunk *chunk, Expr 
     this->current_chunk = chunk;
     this->current_expr_tree = tree;
     return this->generate();
+}
+
+void language::CodeGenerator::emit_byte(std::uint8_t byte) {
+    this->current_chunk->write(byte, this->line);
+}
+
+void language::CodeGenerator::emit_bytes(std::uint8_t byte1, std::uint8_t byte2) {
+    this->emit_byte(byte1);
+    this->emit_byte(byte2);
+}
+
+void language::CodeGenerator::emit_return() {
+    this->emit_byte(static_cast<uint8_t>(language::OpCode::Return));
+}
+
+std::uint8_t language::CodeGenerator::make_constant(language::value_t value) {
+    int constant = this->current_chunk->add_constant(value);
+    if (constant > UINT8_MAX) {
+        this->error("Too many constants in one chunk");
+        return 0;
+    }
+
+    return static_cast<std::uint8_t>(constant);
+}
+
+void language::CodeGenerator::emit_constant(language::value_t value) {
+    this->emit_bytes(static_cast<std::uint8_t>(language::OpCode::Constant), this->make_constant(value));
 }
 
 void language::CodeGenerator::error(const std::string &message) {
@@ -414,6 +432,8 @@ void language::CodeGenerator::visit_binary_expr(Expr::Binary *expr) {
 void language::CodeGenerator::visit_literal_expr(Expr::Literal *expr) {
     if (this->had_error) return;
 
+    this->line = expr->line;
+
     switch (expr->type()) {
         case language::Expr::Literal::Type::Byte:
         case language::Expr::Literal::Type::Short:
@@ -421,18 +441,19 @@ void language::CodeGenerator::visit_literal_expr(Expr::Literal *expr) {
         case language::Expr::Literal::Type::Long:
         case language::Expr::Literal::Type::Float:
         case language::Expr::Literal::Type::Double:
-            this->current_chunk->write(static_cast<std::uint8_t>(language::OpCode::Constant), this->line = expr->line);
-            this->current_chunk->write(this->current_chunk->add_constant(expr->value), this->line = expr->line);
+        case language::Expr::Literal::Type::String:
+            this->emit_constant(expr->value);
             break;
         case language::Expr::Literal::Type::Char:
-        case language::Expr::Literal::Type::String:
-            return; // not implemented
+            break;
         case language::Expr::Literal::Type::Boolean:
-            this->current_chunk->write(static_cast<std::uint8_t>(expr->value.as.boolean_value ? language::OpCode::True : language::OpCode::False), this->line = expr->line);
+            this->emit_byte(static_cast<std::uint8_t>(expr->value.as.boolean_value ? language::OpCode::True : language::OpCode::False));
             break;
         case language::Expr::Literal::Type::Null:
-            this->current_chunk->write(static_cast<std::uint8_t>(language::OpCode::Null), this->line = expr->line);
+            this->emit_byte(static_cast<std::uint8_t>(language::OpCode::Null));
             break;
+        case language::Expr::Literal::Type::Object:
+            return; // not implemented
     }
 }
 

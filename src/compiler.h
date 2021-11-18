@@ -11,6 +11,7 @@
 #include "chunk.h"
 #include "vm.h"
 #include "scanner.h"
+#include "object.h"
 #include "ast/ast.h"
 
 namespace language {
@@ -46,6 +47,16 @@ namespace language {
         Chunk *generate_into(Chunk *chunk);
 
         Chunk *generate_into_with(Chunk *chunk, Expr *tree);
+
+        void emit_byte(std::uint8_t byte);
+
+        void emit_bytes(std::uint8_t byte1, std::uint8_t byte2);
+
+        void emit_return();
+
+        std::uint8_t make_constant(language::value_t value);
+
+        void emit_constant(language::value_t value);
 
         void error(const std::string &message);
 
@@ -98,17 +109,13 @@ namespace language {
 
         void consume(language::TokenType type, const std::string &message);
 
-        void emit_byte(std::uint8_t byte) const;
-
-        void emit_bytes(std::uint8_t byte1, std::uint8_t byte2) const;
-
-        void emit_return() const;
-
         [[nodiscard]] Expr *parse_precedence(ParserPrecedence precedence, const std::string &message);
 
         [[nodiscard]] Expr *expression();
 
         [[nodiscard]] Expr *number();
+
+        [[nodiscard]] Expr *string();
 
         [[nodiscard]] Expr *grouping();
 

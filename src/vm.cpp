@@ -4,6 +4,7 @@
 
 #include "debug.h"
 #include "compiler.h"
+#include "value.h"
 #include "vm.h"
 
 //language::InterpreterResult language::VM::interpret(language::Chunk *_chunk) {
@@ -20,19 +21,6 @@
 bool is_falsey(language::value_t value) {
     return value.type == language::ValueType::Null ||
            (value.type == language::ValueType::Boolean && !value.as.boolean_value);
-}
-
-bool values_equal(language::value_t lhs, language::value_t rhs) {
-    if (lhs.type != rhs.type) return false;
-
-    switch (lhs.type) {
-        case language::ValueType::Double:
-            return lhs.as.double_value == rhs.as.double_value;
-        case language::ValueType::Boolean:
-            return lhs.as.boolean_value == rhs.as.boolean_value;
-        case language::ValueType::Null:
-            return true;
-    }
 }
 
 language::InterpreterResult language::VM::interpret(const std::string &source) {
@@ -127,13 +115,13 @@ language::InterpreterResult language::VM::run() {
             case static_cast<std::uint8_t>(language::OpCode::Ne): {
                 language::value_t b = this->pop();
                 language::value_t a = this->pop();
-                this->push(language::value_t(ValueType::Boolean, !values_equal(a, b)));
+                this->push(language::value_t(ValueType::Boolean, !language::values_equal(a, b)));
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Eq): {
                 language::value_t b = this->pop();
                 language::value_t a = this->pop();
-                this->push(language::value_t(ValueType::Boolean, values_equal(a, b)));
+                this->push(language::value_t(ValueType::Boolean, !language::values_equal(a, b)));
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Gt): {

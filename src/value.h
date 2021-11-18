@@ -9,6 +9,8 @@
 #include <vector>
 
 namespace language {
+    struct Obj;
+
     enum class ValueType {
 //        Byte,
 //        Short,
@@ -20,12 +22,14 @@ namespace language {
 //        String,
         Boolean,
         Null,
+        Object,
     };
     struct value_t {
         ValueType type;
         union {
             bool boolean_value;
             double double_value;
+            Obj* obj;
         } as;
 
         value_t(ValueType type, bool value): type(type), as() {
@@ -36,15 +40,23 @@ namespace language {
             this->as.double_value = value;
         }
 
+        value_t(ValueType type, Obj* obj): type(type), as() {
+            this->as.obj = obj;
+        }
+
         explicit value_t(ValueType type): type(type), as() {
             this->as.double_value = 0.0;
         }
 
-        value_t(): type(), as() {}
+        value_t(): type(), as() {
+            this->as.double_value = 0.0;
+        }
     };
 
 
     void print_value(value_t value);
+
+    bool values_equal(language::value_t lhs, language::value_t rhs);
 
     struct ValueArray {
         using value_buffer = std::vector<value_t>;
