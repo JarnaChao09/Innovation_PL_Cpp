@@ -199,7 +199,7 @@ language::Expr *language::Parser::number() {
 }
 
 language::Expr *language::Parser::string() {
-    return new language::Expr::Literal(language::value_t(ValueType::Object, language::copy_string(this->previous.start + 1, this->previous.length - 2)), Expr::Type::String, this->previous.line);
+    return new language::Expr::Literal(language::value_t(ValueType::Object, language::copy_string_AST(this->previous.start + 1, this->previous.length - 2)), Expr::Type::String, this->previous.line);
 }
 
 language::Expr *language::Parser::grouping() {
@@ -413,11 +413,17 @@ void language::CodeGenerator::visit_binary_expr(Expr::Binary *expr) {
         case language::OpCode::Ge:
         case language::OpCode::Lt:
         case language::OpCode::Le:
-        case language::OpCode::Add:
         case language::OpCode::Subtract:
         case language::OpCode::Multiply:
         case language::OpCode::Divide:
             if (left_type != Expr::Type::Double || right_type != Expr::Type::Double) {
+                this->error("Both arguments of a binary expression '" + std::string(expr->op.start, expr->op.length) + "' must be numbers");
+                return;
+            }
+            break;
+        case language::OpCode::Add:
+            if ((left_type != Expr::Type::Double || right_type != Expr::Type::Double) &&
+                    (left_type != Expr::Type::String || right_type != Expr::Type::String)) {
                 this->error("Both arguments of a binary expression '" + std::string(expr->op.start, expr->op.length) + "' must be numbers");
                 return;
             }

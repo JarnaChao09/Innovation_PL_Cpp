@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "chunk.h"
+//#include "memory.h"
 
 #define STACK_MAX 256
 
@@ -22,15 +23,18 @@ namespace language {
         std::uint8_t* ip;
         value_t stack[STACK_MAX];
         value_t* stack_top;
+        Obj *objects;
 
-        VM(): chunk(), ip(), stack(), stack_top() {
+        VM(): chunk(), ip(), stack(), stack_top(), objects() {
             this->reset_stack();
+            this->objects = nullptr;
         }
 
         ~VM() {
             this->chunk = nullptr;
             this->ip = nullptr;
             this->stack_top = nullptr;
+            this->free_objects();
         }
 
 //        InterpreterResult interpret(language::Chunk* chunk);
@@ -44,6 +48,14 @@ namespace language {
         void push(value_t value);
 
         value_t pop();
+
+        value_t peek(int distance);
+
+        void runtime_error(const char *format, ...);
+
+        void concatenate();
+
+        void free_objects();
     };
 }
 #endif //INNOVATION_PL_VM_H

@@ -6,6 +6,7 @@
 #include "compiler.h"
 #include "value.h"
 #include "vm.h"
+#include "memory.h"
 
 //language::InterpreterResult language::VM::interpret(language::Chunk *_chunk) {
 //    this->chunk = _chunk;
@@ -18,9 +19,36 @@
 //    return InterpreterResult::Ok;
 //}
 
+void language::VM::runtime_error(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stdout, format, args);
+    va_end(args);
+    fputs("\n", stdout);
+
+    std::size_t instruction = this->ip - this->chunk->code.data() - 1;
+    int line = this->chunk->lines[instruction];
+    fprintf(stdout, "[line %d] in script\n", line);
+    this->reset_stack();
+}
+
 bool is_falsey(language::value_t value) {
     return value.type == language::ValueType::Null ||
            (value.type == language::ValueType::Boolean && !value.as.boolean_value);
+}
+
+void language::VM::concatenate() {
+    ObjString* b = AS_STRING(pop());
+    ObjString* a = AS_STRING(pop());
+
+    std::size_t length = a->length + b->length;
+    char* chars = ALLOCATE(char, length + 1);
+    memcpy(chars, a->chars, a->length);
+    memcpy(chars + a->length, b->chars, b->length);
+    chars[length] = '\0';
+
+    ObjString* result = language::take_string(this, chars, length);
+    push(language::value_t(ValueType::Object, (Obj*)result));
 }
 
 language::InterpreterResult language::VM::interpret(const std::string &source) {
@@ -121,7 +149,7 @@ language::InterpreterResult language::VM::run() {
             case static_cast<std::uint8_t>(language::OpCode::Eq): {
                 language::value_t b = this->pop();
                 language::value_t a = this->pop();
-                this->push(language::value_t(ValueType::Boolean, !language::values_equal(a, b)));
+                this->push(language::value_t(ValueType::Boolean, language::values_equal(a, b)));
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Gt): {
@@ -145,7 +173,15 @@ language::InterpreterResult language::VM::run() {
                 break;
             }
             case static_cast<std::uint8_t>(language::OpCode::Add):
-                BINARY_OP(language::ValueType::Double, +);
+                if (this->peek(1).type == language::ValueType::Double &&
+                    this->peek(0).type == language::ValueType::Double) {
+                    BINARY_OP(language::ValueType::Double, +);
+                } else if (this->peek(1).type == language::ValueType::Object &&
+                           this->peek(0).type == language::ValueType::Object &&
+                           this->peek(1).as.obj->type == language::ObjType::String &&
+                           this->peek(0).as.obj->type == language::ObjType::String) {
+                    this->concatenate();
+                }
                 break;
             case static_cast<std::uint8_t>(language::OpCode::Subtract):
                 BINARY_OP(language::ValueType::Double, -);
@@ -179,4 +215,19 @@ void language::VM::push(value_t value) {
 
 language::value_t language::VM::pop() {
     return *--this->stack_top;
+}
+
+language::value_t language::VM::peek(int distance) {
+    return this->stack_top[-1 - distance];
+}
+
+void language::VM::free_objects() {
+    language::Obj *current = this->objects;
+//    int i = 0;
+//    while (current != nullptr) {
+//        language::Obj *next = current->next;
+//        std::cout << "objects[" << i++ << "] " << current << "\n";
+//        current = next;
+//    }
+    language::free_objects(this);
 }
