@@ -25,11 +25,11 @@ int main(int argc, char *argv[]) {
 
 
 void repl(language::VM &vm) {
-    std::cout << "Running Repl\n";
+    std::cout << "[0]> Running Repl\n";
 
     std::string line;
 
-    for (int line_count = 0;;line_count++) {
+    for (int line_count = 1;;line_count++) {
         std::cout << "[" << line_count << "]> ";
 
         std::getline(std::cin, line);
@@ -40,7 +40,7 @@ void repl(language::VM &vm) {
         }
 
         if (line == "exit") {
-            std::cout << "Exiting Repl\n";
+            std::cout << "[" << (line_count + 1) << "]> Exiting Repl\n";
             break;
         }
 
